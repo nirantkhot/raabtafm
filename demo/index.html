@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raabta.fm</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #060D1A;
+      --surface:   #0C1627;
+      --surface2:  #122035;
+      --surface3:  #1A2D46;
+      --teal:      #03BFB5;
+      --teal-dark: #018076;
+      --teal-deep: #004146;
+      --text:      #EFF5F9;
+      --muted:     #949398;
+      --muted2:    #4A5568;
+      --border:    #1E2D3D;
+      --ai:        #7F77DD;
+      --ai-bg:     #1A1640;
+      --danger:    #E05252;
+      --success:   #22c55e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Demo helper bar ─────────────────────────────────────────────────────── */
+
+    .demo-bar {
+      width: 100%;
+      background: var(--teal-deep);
+      border-bottom: 1px solid var(--teal-dark);
+      padding: 7px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .demo-bar span {
+      font-size: 11px;
+      color: rgba(3,191,181,0.7);
+      letter-spacing: 0.05em;
+    }
+
+    .demo-link {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--teal);
+      text-decoration: none;
+      border: 1px solid var(--teal-dark);
+      border-radius: 4px;
+      padding: 2px 10px;
+      letter-spacing: 0.04em;
+      transition: background 0.15s;
+      cursor: pointer;
+      background: none;
+      font-family: inherit;
+    }
+    .demo-link:hover { background: rgba(3,191,181,0.1); }
+
+    .demo-you {
+      font-size: 11px;
+      color: var(--teal);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── App shell ───────────────────────────────────────────────────────────── */
+
+    .app {
+      width: 100%;
+      max-width: 460px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0 0 40px;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────────── */
+
+    .app-header {
+      padding: 20px 24px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .logo span { color: var(--teal); }
+
+    .conn-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px 4px 8px;
+      font-size: 11px;
+      color: var(--muted);
+      transition: border-color 0.25s;
+    }
+    .conn-pill.connected    { border-color: var(--teal-dark); color: var(--teal); }
+    .conn-pill.connecting   { border-color: var(--teal-deep); color: var(--muted); }
+    .conn-pill.disconnected { border-color: var(--border); color: var(--muted2); }
+
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--muted2);
+      flex-shrink: 0;
+      transition: background 0.25s;
+    }
+    .conn-pill.connected  .dot { background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+    .conn-pill.connecting .dot { background: #f59e0b; animation: pulse 1.2s ease infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── Cards ───────────────────────────────────────────────────────────────── */
+
+    .card {
+      margin: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+
+    .card-label {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted2);
+      margin-bottom: 14px;
+    }
+
+    /* ── Session card ────────────────────────────────────────────────────────── */
+
+    .session-code-wrap {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .session-code {
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--teal);
+      line-height: 1;
+    }
+    .session-code.empty { color: var(--muted2); font-size: 14px; letter-spacing: 0.06em; }
+
+    .session-tagline {
+      font-size: 11px;
+      color: var(--muted2);
+      margin-top: 4px;
+    }
+
+    .session-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 9px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .btn:hover:not(:disabled) { background: var(--surface3); border-color: var(--muted2); color: var(--text); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--teal-deep);
+      border-color: var(--teal-dark);
+      color: var(--teal);
+      font-weight: 600;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--teal-dark); border-color: var(--teal); color: #fff; }
+
+    .input-row { display: flex; gap: 8px; }
+
+    .input {
+      flex: 1;
+      padding: 9px 13px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      min-width: 0;
+      transition: border-color 0.15s;
+    }
+    .input:focus { border-color: var(--teal-dark); }
+    .input::placeholder { color: var(--muted2); }
+
+    .input.mono { font-family: 'SF Mono', 'Fira Code', monospace; letter-spacing: 0.06em; }
+
+    .err-text { font-size: 11px; color: var(--danger); min-height: 14px; margin-top: 4px; }
+
+    .reconnect-wrap { margin-top: 8px; }
+
+    /* ── Now Playing card ────────────────────────────────────────────────────── */
+
+    .now-playing-inner {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .art-block {
+      width: 64px;
+      height: 64px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, var(--teal-deep) 0%, var(--teal-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      opacity: 0.7;
+    }
+    .art-block.playing {
+      opacity: 1;
+      box-shadow: 0 0 20px rgba(3,191,181,0.25);
+      animation: breathe 3s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%, 100% { box-shadow: 0 0 20px rgba(3,191,181,0.2); }
+      50%       { box-shadow: 0 0 30px rgba(3,191,181,0.4); }
+    }
+
+    .track-info { min-width: 0; flex: 1; }
+
+    .track-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .track-artist {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .progress-wrap {
+      height: 3px;
+      background: var(--surface3);
+      border-radius: 2px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal-dark), var(--teal));
+      border-radius: 2px;
+      width: 0%;
+      transition: width 1s linear;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .play-btn {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--teal-dark);
+      background: var(--teal-deep);
+      color: var(--teal);
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+    .play-btn .icon { display: inline-block; padding-left: 2px; }
+    .play-btn.playing .icon { padding-left: 0; }
+    .play-btn:hover:not(:disabled) {
+      background: var(--teal-dark);
+      border-color: var(--teal);
+      color: #fff;
+      transform: scale(1.05);
+    }
+    .play-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+    /* ── Members card ────────────────────────────────────────────────────────── */
+
+    .members-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .member-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+    .member-chip.self {
+      border-color: var(--teal-dark);
+      color: var(--teal);
+      background: var(--teal-deep);
+    }
+    .member-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--teal); }
+    .member-chip:not(.self) .member-dot { background: var(--muted2); }
+
+    .members-empty { font-size: 12px; color: var(--muted2); }
+
+    /* ── Vibe card ───────────────────────────────────────────────────────────── */
+
+    .vibe-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+
+    .vibe-tag {
+      font-size: 12px;
+      font-style: italic;
+      color: var(--ai);
+      min-height: 16px;
+      letter-spacing: 0.01em;
+    }
+
+    @keyframes flash {
+      0%   { opacity: 1; }
+      35%  { opacity: 0.1; }
+      100% { opacity: 1; }
+    }
+    .flash { animation: flash 0.6s ease; }
+
+    /* ── Queue card ──────────────────────────────────────────────────────────── */
+
+    .queue-list { display: flex; flex-direction: column; gap: 1px; }
+
+    .queue-empty {
+      font-size: 13px;
+      color: var(--muted2);
+      text-align: center;
+      padding: 20px 0 4px;
+    }
+
+    .queue-item {
+      display: grid;
+      grid-template-columns: 24px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 9px 10px;
+      border-radius: 8px;
+      background: transparent;
+      transition: background 0.12s;
+    }
+    .queue-item:hover { background: var(--surface2); }
+    .queue-item.ai-added {
+      border-left: 2px solid var(--ai);
+      padding-left: 8px;
+      background: rgba(127,119,221,0.04);
+    }
+
+    .q-pos {
+      font-size: 11px;
+      color: var(--muted2);
+      text-align: center;
+      font-family: monospace;
+    }
+
+    .q-info { min-width: 0; }
+    .q-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .q-artist {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .q-meta { text-align: right; flex-shrink: 0; }
+    .q-score {
+      font-size: 11px;
+      color: var(--teal-dark);
+      font-family: monospace;
+      font-weight: 600;
+    }
+    .q-by { font-size: 10px; color: var(--muted2); margin-top: 1px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Demo helper bar ──────────────────────────────────────────────────────── -->
+<div class="demo-bar" id="demo-bar">
+  <span>DEMO MODE</span>
+  <button class="demo-link" onclick="openAs('alice')">Open as Alice ↗</button>
+  <button class="demo-link" onclick="openAs('bob')">Open as Bob ↗</button>
+  <span id="demo-you-label" class="demo-you"></span>
+</div>
+
+<!-- ── App ─────────────────────────────────────────────────────────────────── -->
+<div class="app">
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="logo">raabta<span>.fm</span></div>
+    <div class="conn-pill disconnected" id="conn-pill">
+      <div class="dot"></div>
+      <span id="conn-label">disconnected</span>
+    </div>
+  </div>
+
+  <!-- Session card -->
+  <div class="card">
+    <div class="card-label">Session</div>
+    <div class="session-code-wrap">
+      <div class="session-code empty" id="session-code">no session</div>
+      <div class="session-tagline" id="session-tagline">create one or enter a code below</div>
+    </div>
+    <div class="session-actions">
+      <button class="btn btn-primary" id="create-btn" onclick="createSession()">Create Session</button>
+      <div class="input-row">
+        <input class="input mono" id="join-input" placeholder="JAZZ-4521" maxlength="12" />
+        <button class="btn" id="join-btn" onclick="joinSession()">Join</button>
+      </div>
+      <div class="reconnect-wrap" id="reconnect-wrap" style="display:none">
+        <button class="btn" onclick="reconnect()" style="width:100%">Reconnect ↺</button>
+      </div>
+      <div class="err-text" id="err-text"></div>
+    </div>
+  </div>
+
+  <!-- Now Playing -->
+  <div class="card">
+    <div class="card-label">Now Playing</div>
+    <div class="now-playing-inner">
+      <div class="art-block" id="art-block">♪</div>
+      <div class="track-info">
+        <div class="track-title" id="track-title">—</div>
+        <div class="track-artist" id="track-artist">—</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="controls">
+      <button class="play-btn paused" id="play-btn" disabled onclick="togglePlayback()">
+        <span class="icon">▶</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Members -->
+  <div class="card">
+    <div class="card-label">In this session</div>
+    <div class="members-row" id="members-row">
+      <span class="members-empty">—</span>
+    </div>
+  </div>
+
+  <!-- Vibe queue -->
+  <div class="card">
+    <div class="card-label">Vibe Queue</div>
+    <div class="vibe-input-row">
+      <input class="input" id="vibe-input" placeholder="e.g. late night drive…" />
+      <button class="btn btn-primary" id="vibe-btn" disabled onclick="addVibe()">Add</button>
+    </div>
+    <div class="vibe-tag" id="vibe-tag"></div>
+  </div>
+
+  <!-- Queue -->
+  <div class="card">
+    <div class="card-label">Up Next</div>
+    <div class="queue-list" id="queue-list">
+      <div class="queue-empty">Queue is empty — add a vibe above</div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<script>
+'use strict';
+
+// ── Identity from URL params ────────────────────────────────────────────────
+
+const params     = new URLSearchParams(location.search);
+const demoUser   = params.get('demo') || '';
+const CLIENT_ID  = demoUser === 'alice' ? 'panel-alice'
+                 : demoUser === 'bob'   ? 'panel-bob'
+                 : 'user-' + Math.random().toString(36).slice(2, 8);
+const DISPLAY    = demoUser === 'alice' ? 'Alice'
+                 : demoUser === 'bob'   ? 'Bob'
+                 : (params.get('name') || 'You');
+
+// Label current user in the demo bar
+if (demoUser) {
+  document.getElementById('demo-you-label').textContent = `You are ${DISPLAY}`;
+}
+
+function openAs(who) {
+  window.open(`?demo=${who}`, '_blank');
+}
+
+// ── State ──────────────────────────────────────────────────────────────────
+
+const API = window.location.origin;
+const WS  = API.replace(/^https/, 'wss').replace(/^http/, 'ws');
+
+let sessionId  = null;
+let ws         = null;
+let isPlaying  = false;
+let members    = {};   // { client_id: display_name }
+let pingTimer  = null;
+
+// ── DOM helpers ─────────────────────────────────────────────────────────────
+
+const $ = id => document.getElementById(id);
+
+function setConn(state, label) {
+  const pill = $('conn-pill');
+  pill.className = `conn-pill ${state}`;
+  $('conn-label').textContent = label;
+}
+
+function setError(msg) { $('err-text').textContent = msg || ''; }
+
+// ── REST ────────────────────────────────────────────────────────────────────
+
+async function api(method, path, body) {
+  const headers = { 'X-Client-ID': CLIENT_ID };
+  const init    = { method, headers };
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    init.body = JSON.stringify(body);
+  }
+  const res = await fetch(API + path, init);
+  if (!res.ok) {
+    let detail = await res.text();
+    try { detail = JSON.parse(detail).detail || detail; } catch {}
+    throw new Error(detail);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+// ── Session ──────────────────────────────────────────────────────────────────
+
+async function createSession() {
+  $('create-btn').disabled = true;
+  setError('');
+  try {
+    const data = await api('POST', '/sessions', { display_name: DISPLAY });
+    sessionId = data.session_id;
+    showCode(data.code);
+    connectWS();
+  } catch (e) {
+    setError(e.message);
+    $('create-btn').disabled = false;
+  }
+}
+
+async function joinSession() {
+  const raw = $('join-input').value.trim().toUpperCase();
+  if (!raw) return;
+  setError('');
+  $('join-btn').disabled = true;
+
+  try {
+    let sid;
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw);
+
+    if (isUUID) {
+      sid = raw.toLowerCase();
+    } else {
+      // Resolve human code (JAZZ-4521) → UUID via backend endpoint
+      const resolved = await api('GET', `/sessions/by-code/${encodeURIComponent(raw)}`);
+      sid = resolved.session_id;
+    }
+
+    const data = await api('POST', `/sessions/${sid}/join`, { display_name: DISPLAY });
+    sessionId = sid;
+    showCode(data.code || raw);
+    connectWS();
+  } catch (e) {
+    setError(e.message);
+    $('join-btn').disabled = false;
+  }
+}
+
+function reconnect() {
+  $('reconnect-wrap').style.display = 'none';
+  connectWS();
+}
+
+function showCode(code) {
+  const el = $('session-code');
+  el.textContent = code;
+  el.className   = 'session-code';
+  $('session-tagline').textContent = `share this code with others`;
+  // Also auto-fill join input so the other user can copy it
+  $('join-input').value = code;
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+
+function connectWS() {
+  if (!sessionId) return;
+  if (ws) { try { ws.close(); } catch {} }
+  clearInterval(pingTimer);
+
+  const url = `${WS}/sessions/${sessionId}/ws`
+    + `?display_name=${encodeURIComponent(DISPLAY)}`
+    + `&client_id=${encodeURIComponent(CLIENT_ID)}`;
+
+  setConn('connecting', 'connecting…');
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    setConn('connected', 'connected');
+    $('reconnect-wrap').style.display = 'none';
+    $('play-btn').disabled = false;
+    $('vibe-btn').disabled = false;
+    // Client-side keepalive every 20s so server heartbeat never stacks up
+    pingTimer = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ event: 'ping' }));
+      }
+    }, 20000);
+    refreshMembersAndQueue();
+  };
+
+  ws.onclose = () => {
+    clearInterval(pingTimer);
+    setConn('disconnected', 'disconnected');
+    $('reconnect-wrap').style.display = '';
+    $('play-btn').disabled = true;
+    $('vibe-btn').disabled = true;
+  };
+
+  ws.onerror = () => setConn('disconnected', 'error');
+
+  ws.onmessage = ({ data }) => {
+    let msg;
+    try { msg = JSON.parse(data); } catch { return; }
+    handleMsg(msg);
+  };
+}
+
+function send(obj) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+}
+
+// ── Message handler ───────────────────────────────────────────────────────────
+
+function handleMsg(msg) {
+  const { event, payload } = msg;
+  switch (event) {
+
+    case 'session_state':
+      // payload is full SessionState — playback lives at payload.playback
+      updatePlaybackUI(payload.playback);
+      refreshMembersAndQueue();
+      break;
+
+    case 'playback_updated':
+      // payload is full SessionState — same shape — playback lives at payload.playback
+      updatePlaybackUI(payload.playback || payload);
+      break;
+
+    case 'queue_updated':
+      fetchQueue();
+      if (payload && payload.vibe_interpreted_as && payload.vibe_interpreted_as.length) {
+        flashVibe(payload.vibe_interpreted_as);
+      }
+      break;
+
+    case 'member_joined':
+      if (payload && payload.client_id) {
+        members[payload.client_id] = payload.display_name || payload.client_id;
+        renderMembers();
+      }
+      break;
+
+    case 'member_left':
+      if (payload && payload.client_id) {
+        delete members[payload.client_id];
+        renderMembers();
+      }
+      break;
+
+    case 'rtt_update': {
+      const rtt = payload && payload.rtt_ms != null ? payload.rtt_ms : msg.rtt_ms;
+      if (rtt != null) setConn('connected', `connected · ${rtt}ms`);
+      break;
+    }
+
+    case 'ping':
+      send({ event: 'pong', payload: {} });
+      break;
+
+    case 'pong':
+      // Server replied to our client-side ping — connection is alive
+      break;
+  }
+}
+
+// ── Fetch helpers ─────────────────────────────────────────────────────────────
+
+async function refreshMembersAndQueue() {
+  // Fetch members first, THEN queue — so added_by display names are ready
+  await fetchMembers();
+  await fetchQueue();
+}
+
+async function fetchMembers() {
+  if (!sessionId) return;
+  try {
+    const data = await api('GET', `/sessions/${sessionId}`);
+    // data.members is { client_id: display_name }
+    if (data.members && typeof data.members === 'object' && !Array.isArray(data.members)) {
+      members = { ...data.members };
+    }
+    renderMembers();
+  } catch {}
+}
+
+async function fetchQueue() {
+  if (!sessionId) return;
+  try {
+    const queue = await api('GET', `/sessions/${sessionId}/queue`);
+    renderQueue(queue || []);
+  } catch {}
+}
+
+// ── Playback ──────────────────────────────────────────────────────────────────
+
+function updatePlaybackUI(pb) {
+  if (!pb) return;
+  // pb is a PlaybackState: { status, position_ms, track_spotify_id, ... }
+  isPlaying = pb.status === 'playing';
+  const btn  = $('play-btn');
+  const art  = $('art-block');
+  btn.querySelector('.icon').textContent = isPlaying ? '⏸' : '▶';
+  btn.className = `play-btn ${isPlaying ? 'playing' : 'paused'}`;
+  art.className = `art-block ${isPlaying ? 'playing' : ''}`;
+
+  if (typeof pb.position_ms === 'number') {
+    const pct = Math.min(100, (pb.position_ms / 240000) * 100);
+    $('progress-fill').style.width = pct + '%';
+  }
+}
+
+function togglePlayback() {
+  // Read current state from isPlaying — NOT from the button's visual state
+  const action = isPlaying ? 'pause' : 'play';
+  send({ event: 'playback', payload: { action, position_ms: 0 } });
+}
+
+// ── Vibe ──────────────────────────────────────────────────────────────────────
+
+async function addVibe() {
+  const input = $('vibe-input');
+  const vibe  = input.value.trim();
+  if (!vibe || !sessionId) return;
+
+  const btn = $('vibe-btn');
+  btn.disabled = true;
+  btn.textContent = '…';
+  $('vibe-tag').textContent = '';
+
+  try {
+    const data = await api('POST', `/sessions/${sessionId}/queue/vibe`, {
+      vibe,
+      display_name: DISPLAY,
+    });
+    input.value = '';
+    if (data.vibe_interpreted_as && data.vibe_interpreted_as.length) {
+      flashVibe(data.vibe_interpreted_as);
+    }
+    await fetchQueue();
+  } catch (e) {
+    $('vibe-tag').textContent = `Error: ${e.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add';
+  }
+}
+
+function flashVibe(keywords) {
+  const el = $('vibe-tag');
+  el.textContent = 'Interpreted as: ' + keywords.join(', ');
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 700);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function renderQueue(queue) {
+  const el = $('queue-list');
+  if (!queue.length) {
+    el.innerHTML = '<div class="queue-empty">Queue is empty — add a vibe above</div>';
+    return;
+  }
+  el.innerHTML = queue.map((item, i) => {
+    const isAI    = !!item.vibe_query;
+    const score   = item.similarity_score != null
+      ? Math.round(item.similarity_score * 100) + '%' : '';
+    const pos     = item.position ?? (i + 1);
+    const addedBy = item.added_by === CLIENT_ID
+      ? 'you'
+      : (members[item.added_by] || item.added_by || '');
+    return `
+      <div class="queue-item${isAI ? ' ai-added' : ''}">
+        <div class="q-pos">${esc(String(pos))}</div>
+        <div class="q-info">
+          <div class="q-title">${esc(item.title)}</div>
+          <div class="q-artist">${esc(item.artist)}</div>
+        </div>
+        <div class="q-meta">
+          ${score ? `<div class="q-score">${esc(score)}</div>` : ''}
+          <div class="q-by">${esc(addedBy)}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderMembers() {
+  const el      = $('members-row');
+  const entries = Object.entries(members);
+  if (!entries.length) {
+    el.innerHTML = '<span class="members-empty">—</span>';
+    return;
+  }
+  el.innerHTML = entries.map(([cid, name]) => {
+    const self = cid === CLIENT_ID;
+    return `<div class="member-chip${self ? ' self' : ''}">
+      <div class="member-dot"></div>
+      ${esc(name || cid)}${self ? ' (you)' : ''}
+    </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Keyboard ──────────────────────────────────────────────────────────────────
+
+$('join-input').addEventListener('keydown', e => { if (e.key === 'Enter') joinSession(); });
+$('vibe-input').addEventListener('keydown', e => { if (e.key === 'Enter') addVibe(); });
+
+// Auto-uppercase session code input
+$('join-input').addEventListener('input', e => {
+  const pos = e.target.selectionStart;
+  e.target.value = e.target.value.toUpperCase();
+  e.target.setSelectionRange(pos, pos);
+});
+</script>
+</body>
+</html>
