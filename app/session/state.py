@@ -68,7 +68,7 @@ async def create_session(
         session_id=session_id,
         code="",  # caller sets this
         playback=playback,
-        members=[host_client_id],
+        members={host_client_id: display_name},
         rtt_ms={},
     )
 
@@ -89,7 +89,7 @@ async def get_session_state(
         return None
 
     playback = PlaybackState.model_validate_json(state_json)
-    members  = list(members_raw.keys()) if members_raw else []
+    members  = dict(members_raw) if members_raw else {}   # {client_id: display_name}
     rtt_ms   = {k: int(v) for k, v in rtt_raw.items()} if rtt_raw else {}
 
     logger.debug(

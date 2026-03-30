@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     rate_limit_sessions_per_hour: int = 5
     max_session_members: int = 10
 
-    csv_path: str = "/app/data/spotify_features.csv"
+    csv_path: str = "/app/data/spotify_features_v2.csv"
 
     app_env: str = "development"
     log_level: str = "INFO"

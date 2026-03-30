@@ -10,7 +10,13 @@ _client: aioredis.Redis | None = None
 
 async def create_client(url: str) -> aioredis.Redis:
     global _client
-    _client = aioredis.from_url(url, decode_responses=True)
+    _client = aioredis.from_url(
+        url,
+        decode_responses=True,
+        max_connections=20,          # cap pool; default is None (unbounded)
+        socket_keepalive=True,       # send TCP keepalives so idle conns aren't dropped by NAT
+        socket_connect_timeout=3,    # fail fast if Redis is unreachable on startup
+    )
     # Verify connectivity and measure round-trip to Redis
     with timer() as t:
         await _client.ping()

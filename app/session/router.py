@@ -248,14 +248,14 @@ async def get_session(
         raise HTTPException(status_code=404, detail="Session state not found")
 
     session_state.code = row["code"]
-    members = await state.get_members(session_id, redis)
     rtt_stats = await state.get_rtt_stats(session_id, redis)
 
     return {
         "session_id": session_id,
         "code": row["code"],
         "state": session_state.model_dump(),
-        "members": members,
+        # members also lives inside state.members — exposed top-level for convenience
+        "members": session_state.members,
         "rtt_stats": rtt_stats,
     }
 

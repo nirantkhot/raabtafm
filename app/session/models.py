@@ -20,7 +20,7 @@ class SessionState(BaseModel):
     session_id: str
     code: str
     playback: PlaybackState
-    members: list[str] = []
+    members: dict[str, str] = {}   # {client_id: display_name}
     rtt_ms: dict[str, int] = {}
 
 
