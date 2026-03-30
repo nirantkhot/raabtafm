@@ -37,11 +37,20 @@ async def _run_migrations(pool: asyncpg.Pool) -> None:
     with timer() as t:
         async with pool.acquire() as conn:
             await conn.execute(sql)
-    logger.info(
-        E.DB_PG_MIGRATION,
-        file="001_init.sql",
-        latency_ms=t.ms,
-    )
+    logger.info(E.DB_PG_MIGRATION, file="001_init.sql", latency_ms=t.ms)
+
+    # Log whether pgvector is available (determines if vibe search will work)
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
+        )
+    if row:
+        logger.info("db.pgvector_available", version=row["extversion"])
+    else:
+        logger.warning(
+            "db.pgvector_unavailable",
+            message="pgvector not installed — vibe search disabled; session sync works normally",
+        )
 
 
 def get_pool() -> asyncpg.Pool:
