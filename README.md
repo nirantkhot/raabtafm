@@ -6,7 +6,7 @@ Raabta (رابطہ) means "connection" in Urdu and Hindi. It's a real-time synch
 
 ## Demo
 
-**Live:** https://your-railway-url.up.railway.app/demo/
+**Live:** [https://your-railway-url.up.railway.app/demo/index.html](https://raabtafm-production.up.railway.app/demo/index.html)
 
 Open the demo in a browser. Alice clicks "Create Session" — a session code appears (e.g. `JAZZ-4521`). Bob types that code into the Join input and clicks Join. Both panels are now in the same session: play/pause on either side syncs instantly, and either user can type a vibe into "Add to queue" to get AI-matched tracks.
 
