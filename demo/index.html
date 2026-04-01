@@ -213,8 +213,6 @@
 
     .err-text { font-size: 11px; color: var(--danger); min-height: 14px; margin-top: 4px; }
 
-    .reconnect-wrap { margin-top: 8px; }
-
     /* ── Now Playing ─────────────────────────────────────────────────────────── */
 
     .now-playing-row {
@@ -459,9 +457,6 @@
       </div>
       <button class="btn" id="leave-btn" style="display:none;color:var(--danger);border-color:rgba(248,113,113,0.3)"
               onclick="leaveSession()">Leave Session</button>
-      <div class="reconnect-wrap" id="reconnect-wrap" style="display:none">
-        <button class="btn" style="width:100%" onclick="reconnect()">Reconnect ↺</button>
-      </div>
       <div class="err-text" id="err-text"></div>
     </div>
   </div>
@@ -668,7 +663,6 @@ function leaveSession() {
   $('join-input').value = '';
   $('play-btn').disabled = true;
   $('vibe-btn').disabled = true;
-  $('reconnect-wrap').style.display = 'none';
   $('queue-list').innerHTML = '<div class="queue-empty">Queue is empty — describe a vibe above</div>';
   applySeekUI(0);
   applyPlayback({ status: 'paused', position_ms: 0 });
@@ -682,11 +676,6 @@ function showCode(code) {
   $('session-code').className   = 'session-code';
   $('session-hint').textContent = 'share this code with others';
   $('join-input').value = code;
-}
-
-function reconnect() {
-  $('reconnect-wrap').style.display = 'none';
-  connectWS();
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
@@ -705,7 +694,6 @@ function connectWS() {
 
   ws.onopen = () => {
     setConn('connected', 'connected');
-    $('reconnect-wrap').style.display = 'none';
     $('play-btn').disabled = false;
     $('vibe-btn').disabled = false;
     // Client-side keepalive every 20s — keeps server heartbeat from stacking
@@ -720,7 +708,6 @@ function connectWS() {
   ws.onclose = () => {
     clearInterval(pingTimer);
     setConn('disconnected', 'offline');
-    $('reconnect-wrap').style.display = '';
     $('play-btn').disabled = true;
     $('vibe-btn').disabled = true;
   };
